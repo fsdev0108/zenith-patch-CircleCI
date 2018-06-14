@@ -1,7 +1,6 @@
 package cmd_test
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -33,24 +32,6 @@ var _ = Describe("Diagnostic", func() {
 
 	AfterEach(func() {
 		Expect(os.RemoveAll(tempHome)).To(Succeed())
-	})
-
-	Describe("no config file", func() {
-		BeforeEach(func() {
-			var stdin bytes.Buffer
-			stdin.Write([]byte(`mytoken`))
-			command.Stdin = &stdin
-		})
-
-		It("prompt for token and use default endpoint", func() {
-			session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-			Expect(err).ShouldNot(HaveOccurred())
-			Eventually(session.Err.Contents()).Should(BeEmpty())
-			Eventually(session.Out).Should(gbytes.Say("Please enter your CircleCI API token:"))
-			Eventually(session.Out).Should(gbytes.Say("GraphQL API endpoint: https://circleci.com/graphql"))
-			Eventually(session.Out).Should(gbytes.Say("OK, got a token."))
-			Eventually(session).Should(gexec.Exit(0))
-		})
 	})
 
 	Describe("existing config file", func() {
