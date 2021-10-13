@@ -91,6 +91,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 // MakeCommands creates the top level commands
 func MakeCommands() *cobra.Command {
 	rootOptions = &settings.Config{
+		LogsDir:      "",
 		Debug:        false,
 		Token:        "",
 		Host:         defaultHost,
@@ -155,6 +156,7 @@ func MakeCommands() *cobra.Command {
 	rootCmd.AddCommand(newSwitchCommand(rootOptions))
 	rootCmd.AddCommand(newAdminCommand(rootOptions))
 	rootCmd.AddCommand(newCompletionCommand())
+	rootCmd.AddCommand(newZenithCommand(rootOptions))
 
 	flags := rootCmd.PersistentFlags()
 

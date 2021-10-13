@@ -20,6 +20,7 @@ import (
 
 // Config is used to represent the current state of a CLI instance.
 type Config struct {
+	LogsDir         string            `yaml:"logs_dir"`
 	Host            string            `yaml:"host"`
 	Endpoint        string            `yaml:"endpoint"`
 	Token           string            `yaml:"token"`

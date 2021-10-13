@@ -1,3 +1,27 @@
+# zenith patch
+
+## Init
+
+To install/init this cli, run this:
+```bash
+git clone https://github.com/petuhovskiy/circleci-cli.git
+# make sure go is installed
+cd circleci-cli
+go build -o circleci .
+sudo cp ./circleci /usr/bin/
+
+circleci setup
+# any directory can be used for logs, replace if you want
+circleci zenith set-logs-dir $(pwd)/logs
+```
+
+## Usage
+
+```bash
+# download failed tests from latest builds
+circleci zenith magic --fetch-limit=300 --download
+```
+
 # circleci-cli
 
 This is CircleCI's command-line application.
