@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/CircleCI-Public/circleci-cli/api/graphql"
 	"github.com/CircleCI-Public/circleci-cli/api/rest"
@@ -245,6 +244,12 @@ type testArtifact struct {
 }
 
 func (a *testArtifact) download() error {
+	temp, err := os.CreateTemp("", "download")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temp.Name())
+
 	fmt.Printf(", [DOWNLOADING]")
 	resp, err := http.Get(a.Artifact.URL)
 	if err != nil {
@@ -252,15 +257,27 @@ func (a *testArtifact) download() error {
 	}
 	defer resp.Body.Close()
 
-	// TODO: download to tmp directory instead of memory
-	buf := &bytes.Buffer{}
-	written, err := io.Copy(buf, resp.Body)
+	written, err := io.Copy(temp, resp.Body)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf(", got %vkb", written/1024)
-	return os.WriteFile(a.LocalPath, buf.Bytes(), 0777)
+
+	_, err = temp.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+
+	// copy from temp to new file
+	f, err := os.OpenFile(a.LocalPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = io.Copy(f, temp)
+	return err
 }
 
 func nameForArtifact(path string) string {
