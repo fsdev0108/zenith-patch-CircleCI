@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/CircleCI-Public/circleci-cli/api/graphql"
 	"github.com/CircleCI-Public/circleci-cli/api/rest"
@@ -250,19 +251,22 @@ func (a *testArtifact) download() error {
 		return err
 	}
 	defer resp.Body.Close()
-	content, err := io.ReadAll(resp.Body)
+
+	// TODO: download to tmp directory instead of memory
+	buf := &bytes.Buffer{}
+	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf(", got %vkb", len(content)/1024)
-	return os.WriteFile(a.LocalPath, content, 0777)
+	fmt.Printf(", got %vkb", written/1024)
+	return os.WriteFile(a.LocalPath, buf.Bytes(), 0777)
 }
 
 func nameForArtifact(path string) string {
 	file := filepath.Base(path)
 	dir := filepath.Base(filepath.Dir(path))
-	if file == "safekeeper.log" {
+	if file == "safekeeper.log" || file == "wal_acceptor.log" {
 		return dir + ".log"
 	}
 	return file
