@@ -2,16 +2,19 @@
 
 ## Init
 
+New token can be created at https://app.circleci.com/settings/user/tokens
+
 To install/init this cli, run this:
 ```bash
 git clone https://github.com/petuhovskiy/circleci-cli.git
 # make sure go is installed
 cd circleci-cli
-go build -o circleci .
-sudo cp ./circleci /usr/bin/
+.circleci/pack.sh && go build -o circleci . && sudo cp ./circleci /usr/bin/
 
 circleci setup
+
 # any directory can be used for logs, replace if you want
+mkdir logs
 circleci zenith set-logs-dir $(pwd)/logs
 ```
 
