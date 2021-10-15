@@ -56,6 +56,12 @@ type zenithOptions struct {
 	// if true, only other-tests-{debug,release} builds will be used
 	filterTests  bool
 	filterFailed string // ""|"only"|"other"
+
+	// if specified, only this build is considered
+	buildID int
+
+	// if true, logs will be downloaded for all tests (even successful)
+	useAllTests bool
 }
 
 func newZenithCommand(config *settings.Config) *cobra.Command {
@@ -92,6 +98,8 @@ func newZenithCommand(config *settings.Config) *cobra.Command {
 	queryCommand.Flags().BoolVarP(&opts.filterTests, "filter-tests", "", true, "if true, only other-tests-{debug,release} builds will be used")
 	queryCommand.Flags().StringVarP(&opts.filterFailed, "filter-failed", "", "only", "only = include only failed builds, other = only successful, \"\" = no filter")
 	queryCommand.Flags().BoolVarP(&opts.download, "download", "", false, "if true, all artifacts for failed tests will be downloaded")
+	queryCommand.Flags().IntVarP(&opts.buildID, "build-id", "", -1, "if specified, filter by this build")
+	queryCommand.Flags().BoolVarP(&opts.useAllTests, "use-all-tests", "", false, "if true, logs will be downloaded for all tests")
 
 	return queryCommand
 }
@@ -120,8 +128,6 @@ func zenith(opts zenithOptions) error {
 		return err
 	}
 
-	const noPipeline = -1
-
 	var builds []*buildWithInfo
 	for _, b := range resp {
 		if opts.filterTests {
@@ -137,6 +143,12 @@ func zenith(opts zenithOptions) error {
 			}
 		}
 
+		if opts.buildID != -1 {
+			if b.BuildNum != opts.buildID {
+				continue
+			}
+		}
+
 		buildInfo, err := fetchBuildInfo(opts, b)
 		if err != nil {
 			return err
@@ -147,13 +159,19 @@ func zenith(opts zenithOptions) error {
 
 	for _, b := range builds {
 		fmt.Printf("======== BUILD %v, from %v, on branch %v ========\n", b.Build.BuildNum, b.Build.AuthorName, b.Build.Branch)
-		for _, t := range b.FailedTests {
+
+		consideredTests := b.FailedTests
+		if opts.useAllTests {
+			consideredTests = b.TestsMeta
+		}
+
+		for _, t := range consideredTests {
 			info := b.testInfo(t)
-			fmt.Printf(" -failed test %v\n", t.Name)
+			fmt.Printf(" - (%v) test %v\n", t.Result, t.Name)
 			for _, a := range info.Artifacts {
 				a.LocalPath = filepath.Join(opts.cfg.LogsDir, b.PrettyName, t.Name, a.UniqueName)
 
-				fmt.Printf("  *test artifact, name=%v", a.UniqueName)
+				fmt.Printf("  * test artifact, name=%v", a.UniqueName)
 				fmt.Printf(", local=%v", a.LocalPath)
 
 				if opts.download {
