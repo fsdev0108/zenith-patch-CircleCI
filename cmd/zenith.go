@@ -121,8 +121,6 @@ func zenith(opts zenithOptions) error {
 		// nothing to do
 	}
 
-	//q := opts.args[0]
-
 	resp, err := opts.apiv1.ListRecentBuildsForProject(opts.account, opts.repo, opts.filterBranch, "", opts.buildLimit, opts.buildOffset)
 	if err != nil {
 		return err
@@ -191,6 +189,32 @@ func zenith(opts zenithOptions) error {
 				}
 
 				fmt.Println()
+			}
+		}
+
+		// look for more artifacts to download
+		if opts.download {
+			for _, ciArtifact := range b.Artifacts {
+				if strings.HasSuffix(ciArtifact.Path, "netstat.stdout") {
+					a := &testArtifact{
+						Artifact:   ciArtifact,
+						UniqueName: nameForArtifact(ciArtifact.Path),
+					}
+					a.LocalPath = filepath.Join(opts.cfg.LogsDir, b.PrettyName, a.UniqueName)
+
+					fmt.Printf(" ? artifact, name=%v", a.UniqueName)
+					fmt.Printf(", local=%v", a.LocalPath)
+
+					_, err = os.Stat(a.LocalPath)
+					if os.IsNotExist(err) {
+						err = a.download()
+						if err != nil {
+							return err
+						}
+					}
+
+					fmt.Println()
+				}
 			}
 		}
 	}
