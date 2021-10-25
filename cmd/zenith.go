@@ -129,7 +129,10 @@ func zenith(opts zenithOptions) error {
 	var builds []*buildWithInfo
 	for _, b := range resp {
 		if opts.filterTests {
-			val := b.BuildParameters["CIRCLE_JOB"]
+			val := ""
+			if b.Workflows != nil {
+				val = b.Workflows.JobName
+			}
 			if val != "other-tests-debug" && val != "other-tests-release" {
 				continue
 			}
